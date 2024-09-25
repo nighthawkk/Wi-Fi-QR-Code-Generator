@@ -6,11 +6,80 @@
     <title>Wi-Fi QR Code Generator</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <style>
+        #resultCard {
+            width: 85.6mm; 
+            height: 54mm;  
+            border-radius: 8px; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #print-qrcode {
+            width: 96px;
+            height: 96px;
+        }
+
+        .card-body {
+            display: flex;
+            align-items: center;
+        }
+
+        .card-content { 
+            font-size: 12px;
+        }
+        .cust { 
+            margin-left: 3px   ;
+        }
+
+        .instruction-text {
+            font-size: 10px;
+            text-align: center;
+            
+        }
+
+        h5 {
+            color: #4A90E2;
+            font-size: 18px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #resultCard, #resultCard * {
+                visibility: visible;
+            }
+            #resultCard {
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 10px;
+                margin: 0;
+            }
+
+        
+            
+        }
+        
+    </style>
+
+    <style>
+        .mt-5 {
+            align-items: center;
+        }
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(to bottom right, #4A90E2, #9013FE);
             display: flex;
+            flex-direction: column; 
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -35,27 +104,8 @@
             display: flex;
             justify-content: center;
         }
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            .print-section, .print-section * {
-                visibility: visible;
-            }
-            .print-section {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                padding: 30px;
-                box-sizing: border-box;
-                text-align: center;
-            }
-        }
     </style>
     
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -80,33 +130,62 @@
             <div class="mb-3">
                 <label class="form-label"><strong>Encryption Type:</strong></label>
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="encryption" value="WPA" id="encryptionWPA" checked onclick="updateQR()">
-                    <label class="form-check-label" for="encryptionWPA">WPA</label>
+                    <input class="form-check-input" type="radio" name="encryption" value="WPA/WPA2" id="encryptionWPA" checked onclick="updateQR()">
+                    <label class="form-check-label" for="encryptionWPA">WPA/WPA2</label>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="encryption" value="WEP" id="encryptionWEP" onclick="updateQR()">
                     <label class="form-check-label" for="encryptionWEP">WEP</label>
                 </div>
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="encryption" value="nopass" id="encryptionNone" onclick="updateQR()">
-                    <label class="form-check-label" for="encryptionNone">None</label>
+                    <input class="form-check-input" type="radio" name="encryption" value="None" id="encryptionNone" onclick="updateQR()">
+                    <label class="form-check-label" for="encryptionNone">None (Open Network)</label>
                 </div>
             </div>
 
-            <button type="button" class="btn btn-primary w-100 mt-2" onclick="printQR()">Print QR Code</button>
+            <button type="button" class="btn btn-primary w-100 mt-2" onclick="showCard()">Show WiFi Card</button>
         </form>
 
         <div id="qrcode"></div>
+    </div>
 
-        
-        <div id="printable" class="print-section" style="display: none;">
-            <h2>Wi-Fi Credentials</h2>
-            <p><strong>SSID:</strong> <span id="print-ssid"></span></p>
-            <p><strong>Password:</strong> <span id="print-password"></span></p>
-            <p><strong>Encryption Type:</strong> <span id="print-encryption"></span></p>
-            <div id="print-qrcode"></div>
+<div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">Wi-Fi Card</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                <div class="mt-3">
+                    <div class="row justify-content-center">
+                        <div class="col cust">
+                            <div class="card" id="resultCard">
+                                <h5><i class="fa">&#xf1eb;</i> Wi-Fi Credentials</h5>
+                                <div class="card-body">
+                                    <div id="print-qrcode" style="width: 96px; height: 96px;"></div>
+                                    <div class="card-content ms-3">
+                                        <p><span class="label">SSID: </span><span id="print-ssid"></span></p>
+                                        <p id="passwordField" style="display: none;"><span class="label">Password: </span><span id="print-password"></span></p>
+                                        <p><span class="label">Encryption: </span><span id="print-encryption"></span></p>
+                                    </div>
+                                </div>
+                                <p class="instruction-text"><i style="font-size:10px" class="fa">&#xf030;</i> Point your phone's camera at the QR Code to connect automatically</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printQRCode()">Print WiFi card</button>
+            </div>
         </div>
     </div>
+</div>
+
+
+    
 
     <script>
         function togglePasswordVisibility() {
@@ -122,26 +201,32 @@
             const encryption = document.querySelector('input[name="encryption"]:checked').value;
             const qrCodeContainer = document.getElementById('qrcode');
 
-            if (ssid && (password || encryption === "nopass")) {
+            if (ssid && (password || encryption === "None")) {
                 let wifiQRString;
 
-                if (encryption === "nopass") {
+                if (encryption === "None") {
                     wifiQRString = `WIFI:T:nopass;S:${ssid};;`;
                 } else {
                     wifiQRString = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
                 }
 
                 qrCodeContainer.innerHTML = ""; 
-                QRCode.toCanvas(document.createElement('canvas'), wifiQRString, function (error, canvas) {
-                    if (error) console.error(error);
-                    qrCodeContainer.appendChild(canvas);
+                new QRCode(qrCodeContainer, {
+                    text: wifiQRString,
+                    width: 128,
+                    height: 128
                 });
+
             } else {
                 qrCodeContainer.innerHTML = ""; 
             }
         }
 
-        function printQR() {
+        function printQRCode() {
+            window.print();
+        }
+
+        function showCard() {
             const ssid = document.getElementById('ssid').value;
             const password = document.getElementById('password').value;
             const encryption = document.querySelector('input[name="encryption"]:checked').value;
@@ -150,28 +235,32 @@
             const printPassword = document.getElementById('print-password');
             const printEncryption = document.getElementById('print-encryption');
             const printQrCodeContainer = document.getElementById('print-qrcode');
+            const passwordField = document.getElementById('passwordField'); 
 
-            if (ssid && (password || encryption === "nopass")) {
+
+            if (ssid && (password || encryption === "None")) {
                 printSsid.innerText = ssid;
-                printPassword.innerText = hidePasswordCheckbox.checked ? "●●●●" : (encryption === "nopass" ? "None" : password);
                 printEncryption.innerText = encryption.toUpperCase();
-
-                
+               
                 printQrCodeContainer.innerHTML = "";
                 let wifiQRString;
-                if (encryption === "nopass") {
+                if (encryption === "None") {
                     wifiQRString = `WIFI:T:nopass;S:${ssid};;`;
+                    printPassword.innerText = ""; 
+                    passwordField.style.display = 'none'; 
                 } else {
                     wifiQRString = `WIFI:T:${encryption};S:${ssid};P:${password};;`;
+                    printPassword.innerText = (hidePasswordCheckbox.checked ? "●●●●" : password);
+                    passwordField.style.display = 'block'; 
                 }
 
-                QRCode.toCanvas(document.createElement('canvas'), wifiQRString, function (error, canvas) {
-                    if (error) console.error(error);
-                    printQrCodeContainer.appendChild(canvas);
-                    document.getElementById('printable').style.display = 'block'; 
-                    window.print(); 
-                    document.getElementById('printable').style.display = 'none'; 
+                new QRCode(printQrCodeContainer, {
+                    text: wifiQRString,
+                    width: 96,
+                    height: 96
                 });
+                const qrCodeModal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+                qrCodeModal.show();
             } else {
                 alert("Please enter the SSID and the password (or choose 'None' for no password).");
             }
